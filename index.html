@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JarvisM4 — Brain Architecture</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #050510;
+    color: #e0e0ff;
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+  canvas { position: absolute; top: 0; left: 0; }
+  #ui {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+  #title {
+    position: absolute;
+    top: 28px; left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    pointer-events: none;
+  }
+  #title h1 {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    color: #fff;
+    text-shadow: 0 0 30px #7c3aed, 0 0 60px #7c3aed;
+    text-transform: uppercase;
+  }
+  #title p {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: #a78bfa;
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+  #info-panel {
+    position: absolute;
+    bottom: 30px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 5, 30, 0.85);
+    border: 1px solid rgba(124, 58, 237, 0.4);
+    border-radius: 12px;
+    padding: 16px 28px;
+    min-width: 320px;
+    max-width: 480px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+  }
+  #info-panel h2 {
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: #a78bfa;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  #info-panel p {
+    font-size: 12px;
+    color: #c4b5fd;
+    line-height: 1.6;
+  }
+  #stats {
+    position: absolute;
+    top: 28px; right: 28px;
+    font-size: 11px;
+    color: #6d28d9;
+    letter-spacing: 2px;
+    text-align: right;
+    pointer-events: none;
+  }
+  #stats div { margin-bottom: 4px; }
+  #stats span { color: #a78bfa; }
+  #hint {
+    position: absolute;
+    bottom: 110px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: rgba(167, 139, 250, 0.4);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div id="title">
+    <h1>JarvisM4</h1>
+    <p>Adaptive Reasoning &amp; Intelligence System</p>
+  </div>
+  <div id="stats">
+    <div>HOST <span>Mac Studio M4 Max</span></div>
+    <div>MEM <span>36 GB Unified</span></div>
+    <div>BRAIN <span>Gemma 4 26B</span></div>
+    <div>STATUS <span id="status-text">ONLINE</span></div>
+  </div>
+  <div id="hint">hover nodes to explore</div>
+  <div id="info-panel">
+    <h2 id="node-name">ARIA Core</h2>
+    <p id="node-desc">Adaptive Reasoning &amp; Intelligence Assistant. Running locally on Boss's Mac M4 Max. Always on, always sharp.</p>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H, mouse = { x: -9999, y: -9999 };
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+canvas.addEventListener('mousemove', e => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+});
+
+// Node definitions
+const NODE_DATA = [
+  { id: 'core', label: 'ARIA CORE', short: 'runClaude Loop', desc: 'The agentic loop. Manages turns, tool dispatch, context compaction, and continuation detection. 1200+ lines, highest blast radius.', color: '#7c3aed', glow: '#a855f7', size: 52 },
+  { id: 'brain', label: 'BRAIN', short: 'Gemma 4 26B', desc: 'Switchable brain: Claude SDK (Sonnet/Opus/Haiku) or local Ollama (Gemma 4 26B / GPT-OSS). Credential pool with fairness caps and retry orchestration.', color: '#2563eb', glow: '#60a5fa', size: 38 },
+  { id: 'memory', label: 'MEMORY', short: 'SQLite + Vec', desc: 'Henry\'s memory files in ~/.claude. Vector + keyword merge, 65/35 budget split. user_* files guaranteed Phase 0 slot to protect Boss\'s profile.', color: '#059669', glow: '#34d399', size: 36 },
+  { id: 'telegram', label: 'TELEGRAM', short: '@jarvism4henry_bot', desc: 'Boss\'s primary comms channel. Handles incoming messages, rate limits, SSE events. Telegram ID: 7026364377.', color: '#0ea5e9', glow: '#38bdf8', size: 34 },
+  { id: 'skills', label: 'SKILLS', short: '10 Active Skills', desc: 'Pluggable skill library: youtube-learn, writing-plans, systematic-debugging, TDD, arxiv, blog-post, godot-3d-pixel-art, and more. Skills guarded by 60+ threat patterns.', color: '#d97706', glow: '#fbbf24', size: 34 },
+  { id: 'dashboard', label: 'DASHBOARD', short: 'localhost:8080', desc: 'Web dashboard with Chat, Tasks, Memory, Skills, Bench tabs. Single-file HTML (~1300 lines). Bench tab runs ARIA vs Hermes side-by-side with Opus as judge.', color: '#db2777', glow: '#f472b6', size: 32 },
+  { id: 'agents', label: 'AGENTS', short: 'Background Workers', desc: 'Spawn typed background agents (coder, researcher, reviewer). Agents share a workspace. ARIA stays present to chat while agents run.', color: '#7c3aed', glow: '#c084fc', size: 30 },
+  { id: 'tools', label: 'TOOLS', short: '15+ Tool Suite', desc: 'Full Mac access: Bash, Read, Edit, Write, Glob, Grep, WebFetch, WebSearch, TodoWrite, MCP servers. Protected paths block self-modification.', color: '#6d28d9', glow: '#8b5cf6', size: 30 },
+  { id: 'db', label: 'DATABASE', short: 'SQLite + FTS5', desc: 'Persistent SQLite store: messages, skills, preferences, memory_files, agent_tasks, schedules. FTS5 full-text search + sqlite-vec for semantic similarity.', color: '#0f766e', glow: '#2dd4bf', size: 28 },
+  { id: 'scheduler', label: 'SCHEDULER', short: 'Cron Tasks', desc: 'Create, update, list, and delete scheduled tasks. Cron-triggered remote agents run autonomously on Boss\'s schedule.', color: '#b45309', glow: '#f59e0b', size: 26 },
+  { id: 'compressor', label: 'COMPRESSOR', short: '60K Token Guard', desc: 'In-loop context compactor triggers at 60K tokens. Head/tail protection, tool-pair sanitization, per-call nonce fence as injection defense.', color: '#be185d', glow: '#ec4899', size: 26 },
+  { id: 'projects', label: 'PROJECTS', short: '5 Boss Projects', desc: 'EasyBee (ESL app), EasyBee English Book, Antera (teacher platform), MangaForge (manga/webtoon), ColonyBuilder (Phaser game), Henry\'s Blog.', color: '#1d4ed8', glow: '#93c5fd', size: 24 },
+];
+
+// Connections: [from, to]
+const EDGES = [
+  ['core', 'brain'], ['core', 'memory'], ['core', 'tools'],
+  ['core', 'compressor'], ['core', 'agents'],
+  ['telegram', 'core'], ['dashboard', 'core'],
+  ['skills', 'core'], ['db', 'memory'],
+  ['db', 'core'], ['agents', 'tools'],
+  ['scheduler', 'agents'], ['brain', 'tools'],
+  ['projects', 'memory'], ['projects', 'agents'],
+];
+
+// Layout: place nodes in a radial pattern
+function layoutNodes() {
+  const cx = W / 2, cy = H / 2;
+  const core = NODE_DATA[0];
+  core.x = cx; core.y = cy;
+
+  const ring1 = NODE_DATA.slice(1, 6);
+  const ring2 = NODE_DATA.slice(6, 12);
+
+  ring1.forEach((n, i) => {
+    const a = (i / ring1.length) * Math.PI * 2 - Math.PI / 2;
+    const r = Math.min(W, H) * 0.22;
+    n.x = cx + Math.cos(a) * r;
+    n.y = cy + Math.sin(a) * r;
+  });
+  ring2.forEach((n, i) => {
+    const a = (i / ring2.length) * Math.PI * 2 - Math.PI / 3;
+    const r = Math.min(W, H) * 0.38;
+    n.x = cx + Math.cos(a) * r;
+    n.y = cy + Math.sin(a) * r;
+  });
+}
+
+// Particles
+const particles = [];
+for (let i = 0; i < 80; i++) {
+  particles.push({
+    x: Math.random() * 2000,
+    y: Math.random() * 1200,
+    vx: (Math.random() - 0.5) * 0.3,
+    vy: (Math.random() - 0.5) * 0.3,
+    r: Math.random() * 1.5 + 0.3,
+    a: Math.random(),
+  });
+}
+
+// Data pulses along edges
+const pulses = [];
+function spawnPulse() {
+  const edge = EDGES[Math.floor(Math.random() * EDGES.length)];
+  const from = NODE_DATA.find(n => n.id === edge[0]);
+  const to = NODE_DATA.find(n => n.id === edge[1]);
+  if (from && to) {
+    pulses.push({ from, to, t: 0, speed: 0.008 + Math.random() * 0.01, color: from.glow });
+  }
+}
+
+let hovered = null;
+let t = 0;
+
+function getNodeAt(mx, my) {
+  for (const n of NODE_DATA) {
+    const dx = n.x - mx, dy = n.y - my;
+    if (Math.sqrt(dx * dx + dy * dy) < n.size + 10) return n;
+  }
+  return null;
+}
+
+function draw() {
+  t += 0.012;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background gradient
+  const bg = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H) * 0.8);
+  bg.addColorStop(0, '#0a0520');
+  bg.addColorStop(1, '#050510');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Particles
+  for (const p of particles) {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+    if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(124, 58, 237, ${p.a * 0.4})`;
+    ctx.fill();
+  }
+
+  layoutNodes();
+  hovered = getNodeAt(mouse.x, mouse.y);
+
+  // Draw edges
+  for (const [fid, tid] of EDGES) {
+    const f = NODE_DATA.find(n => n.id === fid);
+    const to = NODE_DATA.find(n => n.id === tid);
+    if (!f || !to) continue;
+    const isActive = hovered && (hovered.id === fid || hovered.id === tid);
+    ctx.beginPath();
+    ctx.moveTo(f.x, f.y);
+    ctx.lineTo(to.x, to.y);
+    ctx.strokeStyle = isActive
+      ? `rgba(167, 139, 250, 0.5)`
+      : `rgba(109, 40, 217, 0.18)`;
+    ctx.lineWidth = isActive ? 1.5 : 0.8;
+    ctx.stroke();
+  }
+
+  // Spawn pulses
+  if (Math.random() < 0.06) spawnPulse();
+
+  // Draw + update pulses
+  for (let i = pulses.length - 1; i >= 0; i--) {
+    const p = pulses[i];
+    p.t += p.speed;
+    if (p.t >= 1) { pulses.splice(i, 1); continue; }
+    const px = p.from.x + (p.to.x - p.from.x) * p.t;
+    const py = p.from.y + (p.to.y - p.from.y) * p.t;
+    ctx.beginPath();
+    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = p.color;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  // Draw nodes
+  for (const n of NODE_DATA) {
+    const isHov = hovered === n;
+    const pulse = Math.sin(t * 2 + n.x * 0.01) * 3;
+    const r = n.size + (isHov ? 8 : 0) + (n.id === 'core' ? pulse : 0);
+
+    // Outer glow
+    const grd = ctx.createRadialGradient(n.x, n.y, r * 0.3, n.x, n.y, r * 2.2);
+    grd.addColorStop(0, n.glow + '44');
+    grd.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r * 2.2, 0, Math.PI * 2);
+    ctx.fillStyle = grd;
+    ctx.fill();
+
+    // Ring
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r + 4, 0, Math.PI * 2);
+    ctx.strokeStyle = isHov ? n.glow : n.color + '66';
+    ctx.lineWidth = isHov ? 2 : 1;
+    ctx.stroke();
+
+    // Body
+    const bodyGrd = ctx.createRadialGradient(n.x - r*0.3, n.y - r*0.3, 0, n.x, n.y, r);
+    bodyGrd.addColorStop(0, n.glow + 'cc');
+    bodyGrd.addColorStop(0.6, n.color + 'aa');
+    bodyGrd.addColorStop(1, n.color + '44');
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = bodyGrd;
+    ctx.shadowBlur = isHov ? 30 : 15;
+    ctx.shadowColor = n.glow;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Label
+    ctx.font = `bold ${n.id === 'core' ? 11 : 9}px 'Courier New', monospace`;
+    ctx.fillStyle = isHov ? '#ffffff' : '#e0d4ff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(n.label, n.x, n.y - 3);
+
+    // Sub-label
+    ctx.font = `8px 'Courier New', monospace`;
+    ctx.fillStyle = isHov ? n.glow : n.color + 'bb';
+    ctx.fillText(n.short, n.x, n.y + 9);
+  }
+
+  // Update info panel
+  const target = hovered || NODE_DATA[0];
+  document.getElementById('node-name').textContent = target.label;
+  document.getElementById('node-desc').textContent = target.desc;
+
+  // Blink status
+  const blink = Math.sin(t * 3) > 0;
+  document.getElementById('status-text').style.color = blink ? '#34d399' : '#059669';
+
+  requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+</body>
+</html>
